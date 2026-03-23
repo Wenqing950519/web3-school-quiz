@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web3 學校宇宙性格測驗 | Web3 Personality Test</title>
+    <!-- 引入 Google Fonts: Orbitron (科技感) & Noto Sans TC (繁中) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+    
+    <!-- GA4 追蹤碼 -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-XXXXXXXXXX');
+    </script>
+    
+    <!-- 引入 Chart.js 繪製雷達圖 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #080d1a; 
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --primary: #00d4ff;
+            --primary-grad: linear-gradient(135deg, #00d4ff, #7b61ff);
+            --border: rgba(255,255,255,0.06);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+            background-size: 30px 30px;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .container {
+            background-color: rgba(15, 25, 50, 0.85);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+            max-width: 600px;
+            width: 100%;
+            padding: 35px 30px 30px 30px;
+            position: relative;
+        }
+
+        /* 語言切換器 */
+        .lang-switcher {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            display: flex;
+            gap: 8px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.8rem;
+            z-index: 10;
+        }
+        .lang-switcher span {
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: color 0.2s, text-shadow 0.2s;
+        }
+        .lang-switcher span:hover { color: var(--text-main); }
+        .lang-switcher span.active { 
+            color: var(--primary); 
+            font-weight: 700; 
+            text-shadow: 0 0 8px rgba(0, 212, 255, 0.4);
+        }
+
+        /* 首頁樣式 */
+        #start-screen { text-align: center; margin-top: 15px; }
+        .title { 
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.8rem; 
+            font-weight: 700; 
+            margin-bottom: 10px; 
+            letter-spacing: 1px;
+        }
+        .subtitle { color: var(--text-muted); margin-bottom: 30px; line-height: 1.6; }
+        
+        /* 按鈕樣式 */
+        .btn-primary {
+            background: var(--primary-grad);
+            color: #fff;
+            border: none;
+            padding: 14px 28px;
+            font-size: 1.1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: 600;
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+        }
+        .btn-primary:hover { 
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 212, 255, 0.3);
+        }
+
+        /* 測驗區樣式 */
+        #quiz-screen { display: none; }
+        
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            font-family: 'Orbitron', sans-serif;
+        }
+        
+        .back-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-family: 'Noto Sans TC', sans-serif;
+            font-size: 0.9rem;
+            cursor: pointer;
+            padding: 0;
+            visibility: hidden; 
+            transition: color 0.2s;
+        }
+        .back-btn:hover { color: var(--primary); }
+
+        .progress-bar-bg {
+            background-color: rgba(255, 255, 255, 0.05);
+            height: 4px;
+            border-radius: 2px;
+            width: 100%;
+            margin-bottom: 25px;
+            overflow: hidden;
+        }
+        .progress-bar-fill {
+            background: linear-gradient(90deg, #00d4ff, #7b61ff);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        #quiz-content-wrapper {
+            transition: opacity 0.2s ease;
+            opacity: 1;
+        }
+
+        .question-text {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+
+        .option-btn {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            padding: 16px;
+            margin-bottom: 12px;
+            background-color: transparent;
+            border: 1px solid var(--border);
+            border-left: 3px solid transparent; 
+            border-radius: 8px;
+            color: var(--text-main);
+            font-size: 1rem;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            line-height: 1.5;
+        }
+        .option-btn:hover {
+            border-color: var(--border);
+            border-left: 3px solid var(--primary);
+            background-color: rgba(0, 212, 255, 0.05);
+            box-shadow: inset 0 0 20px rgba(0, 212, 255, 0.05);
+        }
+
+        /* 結果區樣式 */
+        #result-screen { display: none; text-align: center; }
+        
+        .result-label { 
+            font-size: 1rem; 
+            color: var(--text-muted); 
+            margin-bottom: 5px; 
+            font-family: 'Orbitron', sans-serif;
+        }
+        
+        .result-header-box {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 15px;
+            margin-top: 10px;
+        }
+        .chain-logo {
+            width: 48px;
+            height: 48px;
+            object-fit: contain;
+            filter: drop-shadow(0 0 12px rgba(255,255,255,0.2)); 
+        }
+
+        .result-main { 
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(1.2rem, 5vw, 2rem);
+            font-weight: 700; 
+            margin-bottom: 0; 
+        }
+        
+        /* 替換為引言卡片樣式 */
+        .result-desc { 
+            font-size: 1rem; 
+            line-height: 1.85; 
+            margin: 20px 0 20px;
+            text-align: left;
+            color: #cbd5e1;
+            padding: 18px 20px;
+            border-left: 3px solid var(--result-theme-color, #00d4ff);
+            background: rgba(255,255,255,0.02);
+            border-radius: 0 8px 8px 0;
+            letter-spacing: 0.01em;
+        }
+        
+        /* 替換為虛線輕量樣式 */
+        .result-hidden {
+            background-color: rgba(255,255,255,0.03);
+            padding: 16px 18px;
+            border-radius: 8px;
+            font-size: 0.92rem;
+            color: #94a3b8;
+            margin-bottom: 28px;
+            border: 1px dashed rgba(255,255,255,0.1);
+            text-align: left;
+            line-height: 1.7;
+        }
+        
+        .chart-container {
+            position: relative;
+            margin: 0 auto 30px;
+            width: 100%;
+            max-width: 400px;
+            aspect-ratio: 1 / 1;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+        }
+        .btn-outline {
+            background-color: transparent;
+            color: var(--text-main);
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            padding: 14px 28px;
+            font-size: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            flex: 1;
+            font-weight: 600;
+        }
+        .btn-outline:hover { 
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* 分享區樣式 */
+        #share-screen { display: none; text-align: center; }
+        .share-preview {
+            background-color: rgba(255,255,255,0.03);
+            padding: 20px;
+            border-radius: 8px;
+            font-size: 1.05rem;
+            color: var(--primary);
+            margin-bottom: 30px;
+            border: 1px solid var(--border);
+            text-align: left;
+            line-height: 1.6;
+            word-break: break-all;
+        }
+        .share-actions { flex-direction: column; gap: 12px; }
+
+        .anim-opacity-0 { opacity: 0; }
+        .fade-in { animation: fadeIn 0.4s ease forwards; }
+        .slide-fade-in { animation: slideFadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideFadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- 語言切換器 -->
+    <div class="lang-switcher">
+        <span id="lang-zh" class="active" onclick="switchLang('zh')">ZH</span> |
+        <span id="lang-cn" onclick="switchLang('cn')">CN</span> |
+        <span id="lang-en" onclick="switchLang('en')">EN</span>
+    </div>
+
+    <!-- 首頁 -->
+    <div id="start-screen">
+        <div id="ui-top-label" style="letter-spacing: 0.3em; font-size: 0.7rem; color: #00d4ff; margin-bottom: 8px; font-family: 'Orbitron', sans-serif;">
+            WEB3 PERSONALITY TEST
+        </div>
+        <div class="title" id="ui-main-title">Web3 學校宇宙性格測驗</div>
+        <div class="subtitle" id="ui-desc">在區塊鏈的學校宇宙裡，你是哪種風雲人物？<br>10 個情境題，測出你的本命鏈與隱藏性格。</div>
+        <button class="btn-primary" id="ui-start-btn" onclick="startQuiz()">開始測驗</button>
+        <div id="ui-footer" style="font-size:0.75rem; color: rgba(255,255,255,0.2); margin-top:12px; font-family: 'Orbitron', sans-serif;">
+            由 李昇｜LiSheng 製作
+        </div>
+    </div>
+
+    <!-- 測驗頁 -->
+    <div id="quiz-screen">
+        <div class="progress-header">
+            <button class="back-btn" id="back-btn" onclick="goBack()">⬅ 上一題</button>
+            <span id="progress-text">1/10</span>
+        </div>
+        <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="progress-fill"></div>
+        </div>
+        
+        <div id="quiz-content-wrapper">
+            <div class="question-text" id="question-text">載入中...</div>
+            <div id="options-container"></div>
+        </div>
+    </div>
+
+    <!-- 結果頁 -->
+    <div id="result-screen">
+        <div class="result-label anim-opacity-0" id="anim-label">YOUR TRUE CHAIN IS</div>
+        
+        <div class="result-header-box anim-opacity-0" id="anim-header" style="transform: translateY(20px);">
+            <img id="result-logo" class="chain-logo" src="" alt="">
+            <div class="result-main" id="result-main"></div>
+        </div>
+
+        <div class="result-desc anim-opacity-0" id="anim-desc"></div>
+        
+        <div class="result-hidden anim-opacity-0" id="anim-hidden"></div>
+
+        <div class="chart-container anim-opacity-0" id="anim-chart">
+            <canvas id="radarChart"></canvas>
+        </div>
+
+        <div class="action-buttons anim-opacity-0" id="anim-btns">
+            <button class="btn-outline" id="btn-retry" onclick="location.reload()">重新測驗</button>
+            <button class="btn-primary" id="btn-share" onclick="goToShareScreen()">分享結果</button>
+        </div>
+    </div>
+
+    <!-- 分享頁 -->
+    <div id="share-screen">
+        <div class="result-label" id="ui-share-title">SHARE YOUR IDENTITY</div>
+        <div class="subtitle" id="ui-share-desc" style="margin-top: 10px;">複製下方文字，與朋友比較看看！</div>
+        
+        <div class="share-preview" id="share-preview-text"></div>
+
+        <div class="action-buttons share-actions">
+            <button class="btn-primary" onclick="copyShareText()" id="copy-btn">📋 複製文字與連結</button>
+            <button class="btn-outline" onclick="goBackToResult()" id="btn-back-result">🔙 返回結果</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- 多語系字典 (i18n) ---
+    const i18n = {
+        zh: {
+            ui: {
+                topLabel: "WEB3 PERSONALITY TEST",
+                mainTitle: "Web3 學校宇宙性格測驗",
+                desc: "在區塊鏈的學校宇宙裡，你是哪種風雲人物？<br>10 個情境題，測出你的本命鏈與隱藏性格。",
+                startBtn: "開始測驗",
+                footer: "由 李昇｜LiSheng 製作",
+                backBtn: "⬅ 上一題",
+                resultLabel: "YOUR TRUE CHAIN IS",
+                retryBtn: "重新測驗",
+                shareBtn: "分享結果",
+                shareTitle: "SHARE YOUR IDENTITY",
+                shareDesc: "複製下方文字，與朋友比較看看！",
+                copyBtn: "📋 複製文字與連結",
+                copiedBtn: "✅ 已複製到剪貼簿",
+                backResultBtn: "🔙 返回結果",
+                hiddenPrefix: "HIDDEN: ",
+                hiddenSuffix: "其實你骨子裡也有著 {name} 的特質，這讓你在處理事情時具備另一種潛在維度。",
+                shareTemplate: "我是區塊鏈世界裡的 {name} ({role}) 👉 你是哪條鏈？來測測你在 Web3 學校宇宙裡的角色！"
+            },
+            roles: {
+                BTC: { name: "BTC", role: "退休的創校校長", desc: "你就像是那位不輕易露面，但只要一開口所有人必定安靜聆聽的創校校長。你不追求花俏的創新或短期的熱度，而是堅守最核心的價值觀與底線。在團隊中，你是最穩定、最不可撼動的精神支柱，當外界環境越混亂，大家越會向你看齊。你深信時間會證明一切，真正的權威來自於無懈可擊的信任與歷史累積，而非隨波逐流的改變。" },
+                ETH: { name: "ETH", role: "現任校長", desc: "身為現任校長，你懷抱著宏大的理想，致力於打造一個包容且多元的生態系統。你相信群體智慧與制度的力量，願意為了長遠的願景而建立複雜的基礎設施。在朋友眼中，你是個充滿願景的領導者，但有時過度講究程序與周全，會讓你的「行政效率」顯得緩慢。比起單打獨鬥，你更喜歡看著別人在你搭建的舞台上發光發熱。" },
+                SOL: { name: "SOL", role: "明星球員", desc: "你就是學校裡萬眾矚目的明星球員！你的行動力極強，討厭繁文縟節，始終追求最極致的速度與效率。面對任務，你總是選擇直接衝刺，憑藉著超強的執行力與個人魅力迅速吸引眾人目光。雖然偶爾會因為衝得太快而「翻車」或跌倒，但你強大的恢復力與幽默感，總能讓你迅速站起，繼續在賽場上狂飆。" },
+                SUI: { name: "SUI", role: "低年級頭頭", desc: "你是學校裡最受矚目的怪物新人！雖然資歷尚淺，但你自帶強大背景與頂級天賦，一出場就帶著鎂光燈與極高的討論度。你不受傳統框架束縛，有著初生之犢不畏虎的衝勁，吸收新知識的速度極快。在團隊中，你總是那個帶來新氣象、敢於挑戰老規矩的破局者，大家都十分期待你完全兌現潛力的那一天。" },
+                AVAX: { name: "AVAX", role: "班長", desc: "你是一位充滿理性且極具組織能力的班長。當別人還在爭論不休時，你已經在腦海中建構好一套完美運作的模組與標準作業程序。你非常擅長資源整合，能夠在不同的群體之間找到平衡點，並建立起穩健的溝通橋樑。你追求的不是短暫的火花，而是一個能夠長期穩定運作、且具備高度擴展性的嚴謹制度。" },
+                ADA: { name: "ADA", role: "高材生", desc: "你是那種會把教科書讀透、甚至挑出錯誤的超級高材生。你擁有極高的智商與無可挑剔的嚴謹邏輯，做任何決定前必定經過反覆的驗證與學術級的推演。然而，這份對完美的極致追求，有時會讓你顯得有些高冷或「不接地氣」。你寧可獨自一人將理論打磨到無懈可擊，也不願為了迎合大眾而降低自己的標準。" },
+                TON: { name: "TON", role: "轉學生", desc: "你就像是那位帶著龐大親友團空降學校的超強轉學生。你深知「人脈就是錢脈、流量就是王道」的硬道理，極度擅長利用現有的社群網路與資源來迅速擴張影響力。你不一定需要從頭發明新技術，但你絕對是最懂如何把東西推廣到大街小巷的行銷大師。只要有你在的地方，永遠不缺人潮與話題。" },
+                BNB: { name: "BNB", role: "學校富二代", desc: "你是大家公認的實力派富二代。你不但擁有整個學校最龐大的資源庫，更可怕的是，你的執行力與商業嗅覺也名列前茅。別人還在籌措資金時，你的活動已經辦得風風火火。你非常清楚自己的優勢在哪裡，並且毫不吝嗇地運用這些資源來建立龐大的生態系。在現實的競爭中，你往往是那個笑到最後、通吃市場的霸主。" }
+            },
+            questions: [
+                { q: "朋友說要一起做一件新的事，你的反應是？", opts: ["A）「好啊，你先把企劃書做出來我看看」", "B）「直接說你要我做什麼，我幫你扛」", "C）「我要先查清楚背景再決定」", "D）「這種話我聽過很多次了⋯先觀望」"] },
+                { q: "你在群體裡通常是哪種人？", opts: ["A）不愛說話，但少了我大家都會發現", "B）跑最快、認識最多人，氣場很強", "C）報告一定最嚴謹，但不太愛跟人應酬", "D）背後整合資源，讓事情能運作的那個"] },
+                { q: "你怎麼面對「犯錯」？", opts: ["A）跌倒了就爬起來繼續跑，沒什麼大不了", "B）我會反覆驗證到幾乎不可能出錯才動", "C）犯過的錯不會再犯，這樣就夠了", "D）我不太犯錯，因為我動得很慢很謹慎"] },
+                { q: "你怎麼看「權威」？", opts: ["A）真正的權威不需要解釋，時間會證明", "B）權威要靠制度撐，不能靠個人魅力", "C）誰能解決問題，誰就是權威", "D）所有權威都值得被挑戰"] },
+                { q: "遇到你不認同的規則，你會？", opts: ["A）遵守，但找機會在內部推動改變", "B）公開說出來，用邏輯說服別人", "C）找到空隙繞過去，不正面衝突", "D）我通常沒在注意有沒有規則"] },
+                { q: "你怎麼建立你的影響力？", opts: ["A）默默做，結果出來大家自然知道", "B）帶著一群人一起動，人多才有力", "C）把理論做得無懈可擊，讓人信服", "D）站在最多人需要的位置"] },
+                { q: "你對「速度」的態度？", opts: ["A）速度重要，但我不會為了快犧牲穩定", "B）速度是一切，慢就是死", "C）速度？等我弄清楚再說", "D）我有自己的節奏，不被催"] },
+                { q: "加入新團隊，你最在意什麼？", opts: ["A）這群人有沒有長遠的信念", "B）資源和人脈夠不夠強", "C）這些人夠不夠聰明、夠不夠嚴謹", "D）文化對不對，價值觀合不合"] },
+                { q: "別人眼中你是？", opts: ["A）靠譜穩定，但有時候太慢讓人急", "B）執行力強、熱情，但偶爾翻車", "C）很聰明，但有點難親近", "D）資源多、很好用，但動機讓人猜不透"] },
+                { q: "你覺得最後成功靠的是什麼？", opts: ["A）時間和堅持，其他都是雜音", "B）生態夠大，一個人成不了事", "C）技術夠硬，對手就是複製不了你", "D）動得夠快，先站到位置再說"] }
+            ]
+        },
+        cn: {
+            ui: {
+                topLabel: "WEB3 PERSONALITY TEST",
+                mainTitle: "Web3 学校宇宙性格测试",
+                desc: "在区块链的学校宇宙里，你是哪种风云人物？<br>10 个情境题，测出你的本命链与隐藏性格。",
+                startBtn: "开始测试",
+                footer: "由 李昇｜LiSheng 制作",
+                backBtn: "⬅ 上一题",
+                resultLabel: "YOUR TRUE CHAIN IS",
+                retryBtn: "重新测试",
+                shareBtn: "分享结果",
+                shareTitle: "SHARE YOUR IDENTITY",
+                shareDesc: "复制下方文字，与朋友比较看看！",
+                copyBtn: "📋 复制文字与链接",
+                copiedBtn: "✅ 已复制到剪贴板",
+                backResultBtn: "🔙 返回结果",
+                hiddenPrefix: "HIDDEN: ",
+                hiddenSuffix: "其实你骨子里也有着 {name} 的特质，这让你在处理事情时具备另一种潜在维度。",
+                shareTemplate: "我是区块链世界里的 {name} ({role}) 👉 你是哪条链？来测测你在 Web3 学校宇宙里的角色！"
+            },
+            roles: {
+                BTC: { name: "BTC", role: "退休的创校校长", desc: "你就像是那位不轻易露面，但只要一开口所有人必定安静聆听的创校校长。你不追求花哨的创新或短期的热度，而是坚守最核心的价值观与底线。在团队中，你是最稳定、最不可撼动的精神支柱，当外界环境越混乱，大家越会向你看齐。你深信时间会证明一切，真正的权威来自于无懈可击的信任与历史沉淀，而非随波逐流的改变。" },
+                ETH: { name: "ETH", role: "现任校长", desc: "身为现任校长，你怀抱宏大理想，致力打造包容且多元的生态系统。你相信群体智慧与制度的力量，愿意为了长远愿景建立复杂的底层基础设施。在朋友眼中，你是个充满愿景的领导者，但有时过度讲究程序与周全，会让你的“行政效率”显得缓慢。比起单打独斗，你更喜欢看着别人在你搭建的舞台上发光发热。" },
+                SOL: { name: "SOL", role: "明星球员", desc: "你就是学校里万众瞩目的明星球员！行动力极强，讨厌繁文缛节，始终追求最极致的速度与效率。面对任务，你总是选择直接冲刺，凭借超强的执行力与个人魅力迅速吸引众人目光。虽然偶尔会因为冲得太快而“翻车”或宕机，但你强大的恢复力与幽默感，总能让你迅速站起，继续在赛场上狂飙。" },
+                SUI: { name: "SUI", role: "低年级扛把子", desc: "你是学校里最受瞩目的怪物新人！虽然资历尚浅，但你自带强大背景与顶级天赋，一出场就带着镁光灯与极高的话题度。你不受传统框架束缚，有着初生牛犊不怕虎的冲劲，吸收新知识的速度极快。在团队中，你总是那个带来新气象、敢于挑战老规矩的破局者，大家都十分期待你完全兑现潜力的那一天。" },
+                AVAX: { name: "AVAX", role: "班长", desc: "你是一位充满理性且极具组织能力的班长。当别人还在争论不休时，你已经在脑海中建构好一套完美运作的模块与标准作业流程(SOP)。你非常擅长资源整合，能够在不同的群体之间找到平衡点，并建立起稳健的沟通桥梁。你追求的不是短暂的火花，而是一个能够长期稳定运作、且具备高度扩展性的严谨制度。" },
+                ADA: { name: "ADA", role: "学霸", desc: "你是那种会把教科书读透、甚至挑出错误的超级学霸。你拥有极高的智商与无可挑剔的严谨逻辑，做任何决定前必定经过反复的验证与学术级的推演。然而，这份对完美的极致追求，有时会让你显得有些高冷或“不接地气”。你宁可独自一人将理论打磨到无懈可击，也不愿为了迎合大众而降低自己的标准。" },
+                TON: { name: "TON", role: "转学生", desc: "你就像是那位带着庞大亲友团空降学校的超强转学生。你深知“人脉就是钱脉、流量就是王道”的硬道理，极度擅长利用现有的社群网络与资源来迅速破圈、扩张影响力。你不一定需要从头发明新技术，但你绝对是最懂如何把东西推广到大街小巷的营销大师。只要有你在的地方，永远不缺人潮与话题。" },
+                BNB: { name: "BNB", role: "学校富二代", desc: "你是大家公认的实力派富二代。你不但拥有整个学校最庞大的资源库，更可怕的是，你的执行力与商业嗅觉也名列前茅。别人还在筹措资金时，你的活动已经办得风风火火。你非常清楚自己的优势在哪里，并且毫不吝啬地运用这些资源来建立庞大的生态系。在现实的竞争中，你往往是那个笑到最后、通吃市场的霸主。" }
+            },
+            questions: [
+                { q: "朋友说要一起做一件新的事，你的反应是？", opts: ["A）「好啊，你先把策划案做出来我看看」", "B）「直接说你要我做什么，我帮你扛」", "C）「我要先查清楚背景再决定」", "D）「这种话我听过很多次了⋯先观望」"] },
+                { q: "你在圈子里通常是哪种人？", opts: ["A）不爱说话，但少了我大家都会发现", "B）跑最快、认识最多人，气场很强", "C）报告一定最严谨，但不太爱跟人应酬", "D）背后整合资源，让事情能运作的那个"] },
+                { q: "你怎么面对「犯错」？", opts: ["A）跌倒了就爬起来继续跑，没什么大不了", "B）我会反复验证到几乎不可能出错才动", "C）犯过的错不会再犯，这样就够了", "D）我不太犯错，因为我动得很慢很谨慎"] },
+                { q: "你怎么看「权威」？", opts: ["A）真正的权威不需要解释，时间会证明", "B）权威要靠制度撑，不能靠个人魅力", "C）谁能解决问题，谁就是权威", "D）所有权威都值得被挑战"] },
+                { q: "遇到你不认同的规则，你会？", opts: ["A）遵守，但找机会在内部推动改变", "B）公开说出来，用逻辑说服别人", "C）钻空子绕过去，不正面冲突", "D）我通常没在注意有没有规则"] },
+                { q: "你怎么建立你的影响力？", opts: ["A）默默做，结果出来大家自然知道", "B）带着一群人一起动，人多才有力", "C）把理论做得无懈可击，让人信服", "D）站在最多人需要的位置"] },
+                { q: "你对「速度」的态度？", opts: ["A）速度重要，但我不会为了快牺牲稳定", "B）速度是一切，慢就是死", "C）速度？等我弄清楚再说", "D）我有自己的节奏，不被催"] },
+                { q: "加入新团队，你最在意什么？", opts: ["A）这群人有没有长远的想法与信念", "B）资源和人脉够不够强大", "C）这些人够不够聪明、够不够严谨", "D）团队文化对不对，价值观合不合"] },
+                { q: "别人眼中你是？", opts: ["A）靠谱稳定，但有时候太慢让人急", "B）执行力强、热情，但偶尔宕机翻车", "C）很聪明，但有点难亲近", "D）资源多、很好用，但动机让人猜不透"] },
+                { q: "你觉得最后成功靠的是什么？", opts: ["A）时间和坚持，其他都是杂音", "B）生态足够大，一个人成不了事", "C）技术底座够硬，护城河深", "D）动得够快，先抢占坑位再说"] }
+            ]
+        },
+        en: {
+            ui: {
+                topLabel: "WEB3 PERSONALITY TEST",
+                mainTitle: "Web3 High School Personality Test",
+                desc: "Which character are you in the Web3 high school universe?<br>10 situational questions to reveal your true chain and hidden traits.",
+                startBtn: "START TEST",
+                footer: "Created by 李昇｜LiSheng",
+                backBtn: "⬅ PREVIOUS",
+                resultLabel: "YOUR TRUE CHAIN IS",
+                retryBtn: "RETAKE TEST",
+                shareBtn: "SHARE RESULT",
+                shareTitle: "SHARE YOUR IDENTITY",
+                shareDesc: "Copy the text below and compare with your friends!",
+                copyBtn: "📋 Copy Text & Link",
+                copiedBtn: "✅ Copied to clipboard!",
+                backResultBtn: "🔙 Back to Result",
+                hiddenPrefix: "HIDDEN: ",
+                hiddenSuffix: "Deep down, you also carry the traits of {name} — adding a hidden dimension to how you operate.",
+                shareTemplate: "I'm the {name} — {role} of the Web3 universe 👉 Which chain are YOU? Take the test!"
+            },
+            roles: {
+                BTC: {
+                    name: "BTC",
+                    role: "The Founding Principal",
+                    desc: "You are the legendary founder everyone respects. You rarely show up, but when you speak, the room goes silent. You don't chase flashy trends or short-term hype — you defend core values and hold the line. In any group, you are the most stable and unshakeable pillar. The more chaotic things get, the more people look to you. You believe time proves everything, and true authority comes from undeniable trust built over history — not from following the crowd."
+                },
+                ETH: {
+                    name: "ETH",
+                    role: "Current Principal",
+                    desc: "As the current principal, you carry a grand vision and are committed to building an inclusive, diverse ecosystem. You believe in collective wisdom and institutional power, willing to build complex infrastructure for the long term. Friends see you as a visionary leader — though your focus on procedure and thoroughness can make your 'administrative efficiency' seem slow. You'd rather build the stage and watch others shine on it than take the spotlight yourself."
+                },
+                SOL: {
+                    name: "SOL",
+                    role: "Star Athlete",
+                    desc: "You are the school's undisputed star athlete. Highly action-oriented, you hate red tape and always push for maximum speed and efficiency. You tackle challenges head-on, drawing attention with sheer execution and personal charisma. You might 'crash' occasionally from moving too fast, but your resilience and humor always get you back on your feet — ready to dominate the field again."
+                },
+                SUI: {
+                    name: "SUI",
+                    role: "Freshman Prodigy",
+                    desc: "You are the most hyped rookie in school. Despite limited seniority, you arrive with a strong backing, top-tier talent, and massive buzz from day one. You're not bound by tradition — you have a fearless, newcomer's drive and absorb new knowledge at an extraordinary pace. In any team, you're the game-changer who challenges old rules and brings fresh energy. Everyone is waiting for the day you fully deliver on your potential."
+                },
+                AVAX: {
+                    name: "AVAX",
+                    role: "Class President",
+                    desc: "You are the highly rational, deeply organized class president. While others are still debating, you've already mapped out a flawless modular system and SOP in your head. You excel at resource integration, finding balance between different groups and building reliable communication bridges. You don't seek a brief spark — you want a scalable, rigorous system that operates reliably for the long term."
+                },
+                ADA: {
+                    name: "ADA",
+                    role: "Valedictorian",
+                    desc: "You are the ultimate valedictorian — the type who reads the textbook cover to cover and still spots the errors. With exceptional intellect and flawless logic, you rigorously verify every decision with near-academic precision before acting. However, this relentless pursuit of perfection can make you seem aloof or out of touch. You'd rather refine your theories alone until they're bulletproof than lower your standards to please the crowd."
+                },
+                TON: {
+                    name: "TON",
+                    role: "Transfer Student",
+                    desc: "You are the powerhouse transfer student who arrives with an entire entourage. You understand that 'network is net worth' and excel at leveraging existing social graphs and resources to rapidly expand your influence. You may not invent things from scratch, but you are the ultimate marketer who knows exactly how to bring anything to the masses. Where you go, traffic follows."
+                },
+                BNB: {
+                    name: "BNB",
+                    role: "The School's Rich Kid",
+                    desc: "You are the undeniably capable rich kid. You have the largest resource pool in school, and your execution speed and business instincts are just as impressive. While others are still raising funds, your events are already in full swing. You know exactly where your advantages lie and use them without hesitation to build a massive ecosystem. In the real competition, you're the one who wins it all."
+                }
+            },
+            questions: [
+                {
+                    q: "A friend suggests starting something new together. Your reaction?",
+                    opts: [
+                        "A) Sure, but show me the proposal first.",
+                        "B) Just tell me what to do — I'll carry the team.",
+                        "C) I need to research the background before deciding.",
+                        "D) I've heard this kind of thing before... I'll wait and see."
+                    ]
+                },
+                {
+                    q: "What's your typical role in a group?",
+                    opts: [
+                        "A) The quiet backbone — people only realize my value when I'm absent.",
+                        "B) The fastest mover with the strongest presence.",
+                        "C) The most rigorous one, but not big on socializing.",
+                        "D) The behind-the-scenes integrator who makes everything run."
+                    ]
+                },
+                {
+                    q: "How do you handle making mistakes?",
+                    opts: [
+                        "A) Get back up and keep running. No big deal.",
+                        "B) I verify repeatedly until mistakes are nearly impossible.",
+                        "C) I won't repeat the same mistake. That's enough.",
+                        "D) I rarely make mistakes because I move slowly and carefully."
+                    ]
+                },
+                {
+                    q: "What's your view on authority?",
+                    opts: [
+                        "A) True authority needs no explanation — time will prove it.",
+                        "B) Authority must be backed by systems, not personal charisma.",
+                        "C) Whoever solves the problem is the authority.",
+                        "D) All authority deserves to be challenged."
+                    ]
+                },
+                {
+                    q: "When you face a rule you disagree with, you?",
+                    opts: [
+                        "A) Follow it, but look for ways to change it from within.",
+                        "B) Speak up publicly and use logic to persuade others.",
+                        "C) Find a loophole and bypass it without direct conflict.",
+                        "D) I usually don't even notice if there are rules."
+                    ]
+                },
+                {
+                    q: "How do you build your influence?",
+                    opts: [
+                        "A) Work quietly — the results will speak for themselves.",
+                        "B) Rally a group. Strength comes in numbers.",
+                        "C) Make the theory airtight so people have no choice but to believe.",
+                        "D) Position myself exactly where most people need me."
+                    ]
+                },
+                {
+                    q: "What's your attitude toward speed?",
+                    opts: [
+                        "A) Speed matters, but not at the cost of stability.",
+                        "B) Speed is everything. Slow means dead.",
+                        "C) Speed? Let me figure things out first.",
+                        "D) I have my own pace. I won't be rushed."
+                    ]
+                },
+                {
+                    q: "When joining a new team, what matters most to you?",
+                    opts: [
+                        "A) Do they have a genuine long-term vision?",
+                        "B) Are their resources and connections strong enough?",
+                        "C) Are they smart and rigorous enough?",
+                        "D) Does the culture and values actually align with mine?"
+                    ]
+                },
+                {
+                    q: "How do others see you?",
+                    opts: [
+                        "A) Reliable and steady, but sometimes frustratingly slow.",
+                        "B) High energy and results-driven, but prone to the occasional crash.",
+                        "C) Very sharp, but a bit hard to get close to.",
+                        "D) Resourceful and useful, but your motives are hard to read."
+                    ]
+                },
+                {
+                    q: "What do you think ultimate success really depends on?",
+                    opts: [
+                        "A) Time and persistence. Everything else is noise.",
+                        "B) A big enough ecosystem. No one succeeds alone.",
+                        "C) Technology so solid that no one can copy it.",
+                        "D) Moving fast enough to claim the position first."
+                    ]
+                }
+            ]
+        }
+    };
+
+    // 原計分邏輯保持不變
+    const scoringMatrix = [
+        { BTC:2, ETH:3, SOL:0, SUI:1, AVAX:2, ADA:3, TON:0, BNB:1 },
+        { BTC:1, ETH:1, SOL:3, SUI:2, AVAX:1, ADA:0, TON:2, BNB:3 },
+        { BTC:3, ETH:2, SOL:0, SUI:0, AVAX:2, ADA:3, TON:0, BNB:1 },
+        { BTC:3, ETH:1, SOL:0, SUI:1, AVAX:1, ADA:2, TON:0, BNB:0 },
+        // Q2
+        { BTC:3, ETH:2, SOL:0, SUI:0, AVAX:1, ADA:2, TON:0, BNB:1 },
+        { BTC:0, ETH:1, SOL:3, SUI:3, AVAX:0, ADA:0, TON:2, BNB:2 },
+        { BTC:1, ETH:1, SOL:0, SUI:0, AVAX:2, ADA:3, TON:0, BNB:0 },
+        { BTC:1, ETH:2, SOL:1, SUI:1, AVAX:3, ADA:1, TON:2, BNB:3 },
+        // Q3
+        { BTC:1, ETH:1, SOL:3, SUI:3, AVAX:1, ADA:0, TON:2, BNB:2 },
+        { BTC:2, ETH:2, SOL:0, SUI:0, AVAX:2, ADA:3, TON:0, BNB:0 },
+        { BTC:2, ETH:2, SOL:1, SUI:1, AVAX:2, ADA:2, TON:1, BNB:2 },
+        { BTC:3, ETH:2, SOL:0, SUI:0, AVAX:1, ADA:3, TON:0, BNB:1 },
+        // Q4
+        { BTC:3, ETH:2, SOL:1, SUI:0, AVAX:1, ADA:2, TON:0, BNB:1 },
+        { BTC:1, ETH:3, SOL:1, SUI:1, AVAX:3, ADA:2, TON:1, BNB:0 },
+        { BTC:0, ETH:1, SOL:3, SUI:2, AVAX:2, ADA:0, TON:2, BNB:3 },
+        { BTC:2, ETH:2, SOL:1, SUI:3, AVAX:1, ADA:1, TON:1, BNB:0 },
+        // Q5
+        { BTC:1, ETH:3, SOL:1, SUI:1, AVAX:3, ADA:2, TON:1, BNB:2 },
+        { BTC:2, ETH:2, SOL:2, SUI:3, AVAX:1, ADA:3, TON:1, BNB:0 },
+        { BTC:0, ETH:0, SOL:3, SUI:2, AVAX:1, ADA:0, TON:3, BNB:3 },
+        { BTC:1, ETH:0, SOL:2, SUI:2, AVAX:0, ADA:0, TON:3, BNB:2 },
+        // Q6
+        { BTC:3, ETH:2, SOL:1, SUI:0, AVAX:1, ADA:2, TON:0, BNB:1 },
+        { BTC:0, ETH:2, SOL:2, SUI:2, AVAX:2, ADA:0, TON:3, BNB:3 },
+        { BTC:1, ETH:2, SOL:0, SUI:1, AVAX:2, ADA:3, TON:0, BNB:0 },
+        { BTC:1, ETH:3, SOL:2, SUI:2, AVAX:2, ADA:0, TON:2, BNB:2 },
+        // Q7
+        { BTC:2, ETH:3, SOL:1, SUI:1, AVAX:3, ADA:1, TON:1, BNB:2 },
+        { BTC:0, ETH:0, SOL:3, SUI:3, AVAX:1, ADA:0, TON:2, BNB:3 },
+        { BTC:2, ETH:1, SOL:0, SUI:0, AVAX:1, ADA:3, TON:0, BNB:0 },
+        { BTC:3, ETH:2, SOL:0, SUI:1, AVAX:1, ADA:2, TON:0, BNB:0 },
+        // Q8
+        { BTC:3, ETH:3, SOL:1, SUI:1, AVAX:2, ADA:2, TON:0, BNB:0 },
+        { BTC:0, ETH:0, SOL:2, SUI:2, AVAX:1, ADA:0, TON:3, BNB:3 },
+        { BTC:1, ETH:2, SOL:0, SUI:1, AVAX:2, ADA:3, TON:0, BNB:0 },
+        { BTC:2, ETH:3, SOL:1, SUI:2, AVAX:1, ADA:2, TON:1, BNB:0 },
+        // Q9
+        { BTC:2, ETH:3, SOL:0, SUI:0, AVAX:2, ADA:2, TON:0, BNB:1 },
+        { BTC:0, ETH:0, SOL:3, SUI:3, AVAX:0, ADA:0, TON:2, BNB:1 },
+        { BTC:1, ETH:1, SOL:0, SUI:0, AVAX:1, ADA:3, TON:0, BNB:0 },
+        { BTC:0, ETH:0, SOL:1, SUI:1, AVAX:1, ADA:0, TON:3, BNB:3 },
+        // Q10
+        { BTC:3, ETH:2, SOL:0, SUI:0, AVAX:1, ADA:2, TON:0, BNB:0 },
+        { BTC:0, ETH:3, SOL:2, SUI:2, AVAX:3, ADA:0, TON:3, BNB:2 },
+        { BTC:1, ETH:2, SOL:1, SUI:2, AVAX:2, ADA:3, TON:0, BNB:0 },
+        { BTC:0, ETH:0, SOL:3, SUI:3, AVAX:1, ADA:0, TON:2, BNB:3 }
+    ];
+
+    const chainLogos = {
+        BTC: "https://cryptologos.cc/logos/bitcoin-btc-logo.png",
+        ETH: "https://cryptologos.cc/logos/ethereum-eth-logo.png",
+        SOL: "https://cryptologos.cc/logos/solana-sol-logo.png",
+        SUI: "https://cryptologos.cc/logos/sui-sui-logo.png",
+        AVAX: "https://cryptologos.cc/logos/avalanche-avax-logo.png",
+        ADA: "https://cryptologos.cc/logos/cardano-ada-logo.png",
+        TON: "https://cryptologos.cc/logos/toncoin-ton-logo.png",
+        BNB: "https://cryptologos.cc/logos/bnb-bnb-logo.png"
+    };
+
+    const chainColors = {
+        BTC: "#f7931a", ETH: "#8a7dff", SOL: "#9945ff", SUI: "#4da2ff",
+        AVAX: "#e84142", ADA: "#6ab4ff", TON: "#0098ea", BNB: "#f3ba2f"
+    };
+
+    // 全局狀態
+    let currentLang = 'zh';
+    let currentStep = 0;
+    const totalQuestions = 10;
+    let userScores = { BTC: 0, ETH: 0, SOL: 0, SUI: 0, AVAX: 0, ADA: 0, TON: 0, BNB: 0 };
+    let scoreHistory = []; 
+    
+    // 計算總分池 (依賴不變的計分邏輯)
+    const poolScores = { BTC: 0, ETH: 0, SOL: 0, SUI: 0, AVAX: 0, ADA: 0, TON: 0, BNB: 0 };
+    scoringMatrix.forEach(scores => {
+        for (const chain in scores) poolScores[chain] += scores[chain];
+    });
+
+    let radarChartInstance = null;
+    let finalPrimaryRole = "";
+
+    // 語言切換邏輯
+    function switchLang(lang) {
+        currentLang = lang;
+        
+        // 更新切換器 UI
+        document.querySelectorAll('.lang-switcher span').forEach(el => el.classList.remove('active'));
+        document.getElementById(`lang-${lang}`).classList.add('active');
+
+        // 更新靜態文字
+        const text = i18n[lang].ui;
+        document.getElementById('ui-top-label').innerText = text.topLabel;
+        document.getElementById('ui-main-title').innerText = text.mainTitle;
+        document.getElementById('ui-desc').innerHTML = text.desc;
+        document.getElementById('ui-start-btn').innerText = text.startBtn;
+        document.getElementById('ui-footer').innerText = text.footer;
+        document.getElementById('back-btn').innerText = text.backBtn;
+        document.getElementById('anim-label').innerText = text.resultLabel;
+        document.getElementById('btn-retry').innerText = text.retryBtn;
+        document.getElementById('btn-share').innerText = text.shareBtn;
+        document.getElementById('ui-share-title').innerText = text.shareTitle;
+        document.getElementById('ui-share-desc').innerText = text.shareDesc;
+        document.getElementById('copy-btn').innerText = text.copyBtn;
+        document.getElementById('btn-back-result').innerText = text.backResultBtn;
+
+        // 若在測驗中，重新渲染題目
+        if (document.getElementById('quiz-screen').style.display === 'block') {
+            renderQuestion(true); 
+        }
+
+        // 若在結果頁，重新填入結果與文案
+        if (document.getElementById('result-screen').style.display === 'block' || 
+            document.getElementById('share-screen').style.display === 'block') {
+            refreshResultText();
+        }
+    }
+
+    function startQuiz() {
+        document.getElementById('start-screen').style.display = 'none';
+        document.getElementById('quiz-screen').style.display = 'block';
+        scoreHistory = []; 
+        renderQuestion();
+    }
+
+    function renderQuestion(skipAnimation = false) {
+        const wrapper = document.getElementById('quiz-content-wrapper');
+        const backBtn = document.getElementById('back-btn');
+        backBtn.style.visibility = currentStep > 0 ? 'visible' : 'hidden';
+        
+        if(!skipAnimation) wrapper.style.opacity = 0;
+
+        setTimeout(() => {
+            const progressPercent = ((currentStep + 1) / totalQuestions) * 100;
+            document.getElementById('progress-fill').style.width = `${progressPercent}%`;
+            document.getElementById('progress-text').innerText = `${currentStep + 1}/${totalQuestions}`;
+
+            const qData = i18n[currentLang].questions[currentStep];
+            document.getElementById('question-text').innerText = qData.q;
+            
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+            
+            qData.opts.forEach((optText, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                
+                // 處理 A) B) 等前綴樣式
+                const match = optText.match(/^([A-D][）\)\]]?\s?)(.+)$/);
+                if (match) {
+                    btn.innerHTML = `<span style="color: var(--primary); font-family: 'Orbitron', sans-serif; font-size: 0.85rem; margin-right: 12px; opacity: 0.9;">${match[1]}</span><span>${match[2]}</span>`;
+                } else {
+                    btn.innerText = optText;
+                }
+
+                btn.onclick = function() {
+                    const allBtns = document.querySelectorAll('.option-btn');
+                    allBtns.forEach(b => b.style.pointerEvents = 'none'); 
+                    
+                    this.style.borderColor = 'var(--primary)';
+                    this.style.borderLeftColor = 'var(--primary)';
+                    this.style.backgroundColor = 'rgba(0, 212, 255, 0.12)';
+
+                    // 取出對應的分數 (每題4選項，矩陣索引為 step * 4 + index)
+                    const scoreObj = scoringMatrix[currentStep * 4 + index];
+                    setTimeout(() => handleOptionSelect(scoreObj), 250);
+                };
+                optionsContainer.appendChild(btn);
+            });
+
+            if(!skipAnimation) wrapper.style.opacity = 1;
+        }, skipAnimation ? 0 : 250); 
+    }
+
+    function handleOptionSelect(scoresToAdd) {
+        scoreHistory.push(scoresToAdd);
+        for (const chain in scoresToAdd) {
+            userScores[chain] += scoresToAdd[chain];
+        }
+
+        currentStep++;
+        
+        if (currentStep < totalQuestions) {
+            renderQuestion();
+        } else {
+            document.getElementById('progress-fill').style.width = `100%`;
+            setTimeout(showResult, 300);
+        }
+    }
+
+    function goBack() {
+        if (currentStep === 0) return; 
+        const lastScores = scoreHistory.pop();
+        for (const chain in lastScores) {
+            userScores[chain] -= lastScores[chain];
+        }
+        currentStep--;
+        renderQuestion();
+    }
+
+    let globalSortedScores = []; // 供語系切換時使用
+
+    function showResult() {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        document.getElementById('quiz-screen').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+
+        const normalizedScores = {};
+        for (const chain in userScores) {
+            normalizedScores[chain] = (userScores[chain] / poolScores[chain]) * 100;
+        }
+
+        globalSortedScores = Object.entries(normalizedScores).sort((a, b) => b[1] - a[1]);
+        
+        refreshResultText(); // 填入文字資料
+        
+        const themeColor = chainColors[globalSortedScores[0][0]];
+        triggerResultAnimations(normalizedScores, themeColor);
+    }
+
+    // 將填入文字的邏輯抽出，方便語系切換時呼叫
+    function refreshResultText() {
+        if (!globalSortedScores.length) return;
+        
+        const primaryChain = globalSortedScores[0][0];
+        const secondaryChain = globalSortedScores[1][0];
+        finalPrimaryRole = primaryChain;
+        
+        // --- GA4 Event Tracking ---
+        if (typeof gtag === 'function') {
+            gtag('event', 'quiz_result', {
+                'primary_chain': primaryChain,
+                'secondary_chain': secondaryChain
+            });
+        }
+
+        const primaryData = i18n[currentLang].roles[primaryChain];
+        const secondaryData = i18n[currentLang].roles[secondaryChain];
+        const themeColor = chainColors[primaryChain];
+
+        const logoEl = document.getElementById('result-logo');
+        logoEl.style.display = 'block'; 
+        logoEl.src = chainLogos[primaryChain];
+        logoEl.alt = primaryData.name + " Logo";
+        logoEl.onerror = function() { this.style.display = 'none'; };
+        logoEl.style.filter = `drop-shadow(0 0 16px ${themeColor})`;
+        
+        const mainTitle = document.getElementById('result-main');
+        mainTitle.innerText = `${primaryData.name} — ${primaryData.role}`;
+        mainTitle.style.color = themeColor;
+        
+        document.getElementById('result-screen').style.setProperty('--result-theme-color', themeColor);
+        
+        document.getElementById('anim-desc').innerText = primaryData.desc;
+        
+        const hiddenPrefix = i18n[currentLang].ui.hiddenPrefix;
+        const hiddenSuffix = i18n[currentLang].ui.hiddenSuffix.replace('{name}', secondaryData.name);
+        
+        document.getElementById('anim-hidden').innerHTML = `
+            <div style="display:flex; align-items:center; gap: 8px; margin-bottom: 5px;">
+                <img src="${chainLogos[secondaryChain]}" style="width:20px; height:20px; object-fit:contain;" alt="${secondaryData.name} Logo" onerror="this.style.display='none'">
+                <b style="font-family: 'Orbitron', sans-serif;">${hiddenPrefix}${secondaryData.name} (${secondaryData.role})</b>
+            </div>
+            ${hiddenSuffix}
+        `;
+
+        // 如果在分享畫面，順便更新分享文字
+        if (document.getElementById('share-screen').style.display === 'block') {
+            generateShareText();
+        }
+    }
+
+    function triggerResultAnimations(normalizedScores, themeColor) {
+        const els = ['anim-label', 'anim-header', 'anim-desc', 'anim-hidden', 'anim-chart', 'anim-btns'].map(id => document.getElementById(id));
+        els.forEach(el => {
+            el.classList.remove('fade-in', 'slide-fade-in');
+            el.classList.add('anim-opacity-0');
+        });
+        els[1].style.transform = "translateY(20px)";
+
+        setTimeout(() => { els[0].classList.replace('anim-opacity-0', 'fade-in'); }, 50);
+        setTimeout(() => { els[1].classList.replace('anim-opacity-0', 'slide-fade-in'); }, 400);
+        setTimeout(() => { els[2].classList.replace('anim-opacity-0', 'fade-in'); }, 1000);
+        setTimeout(() => { els[3].classList.replace('anim-opacity-0', 'fade-in'); }, 1100);
+        
+        setTimeout(() => { 
+            els[4].classList.replace('anim-opacity-0', 'fade-in'); 
+            renderRadarChart(normalizedScores, themeColor);
+        }, 1200);
+
+        setTimeout(() => { els[5].classList.replace('anim-opacity-0', 'fade-in'); }, 1300);
+    }
+
+    function renderRadarChart(normalizedScoresObj, themeColor) {
+        const ctx = document.getElementById('radarChart').getContext('2d');
+        const labels = ["BTC", "ETH", "SOL", "SUI", "AVAX", "ADA", "TON", "BNB"];
+        const dataPoints = labels.map(label => normalizedScoresObj[label]);
+
+        if(radarChartInstance) radarChartInstance.destroy();
+
+        radarChartInstance = new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Match',
+                    data: dataPoints,
+                    backgroundColor: themeColor + '33', 
+                    borderColor: themeColor,
+                    pointBackgroundColor: themeColor,
+                    pointBorderColor: themeColor,
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: themeColor,
+                    borderWidth: 2,
+                }]
+            },
+            options: {
+                scales: {
+                    r: {
+                        angleLines: { color: 'rgba(255, 255, 255, 0.15)' },
+                        grid: { color: 'rgba(255, 255, 255, 0.15)' },
+                        pointLabels: { color: '#94a3b8', font: { size: 12, family: "'Orbitron', sans-serif" } },
+                        ticks: { display: false, min: 0 } 
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: { label: function(context) { return ' Match: ' + Math.round(context.raw) + '%'; } } }
+                },
+                maintainAspectRatio: false
+            }
+        });
+    }
+
+    const SHARE_URL = ""; 
+    let shareTextContent = "";
+
+    function generateShareText() {
+        const primaryData = i18n[currentLang].roles[finalPrimaryRole];
+        const urlPart = SHARE_URL ? '\n' + SHARE_URL : '';
+        let template = i18n[currentLang].ui.shareTemplate;
+        template = template.replace('{name}', primaryData.name).replace('{role}', primaryData.role);
+        shareTextContent = template + urlPart;
+        document.getElementById('share-preview-text').innerText = shareTextContent;
+    }
+
+    function goToShareScreen() {
+        document.getElementById('result-screen').style.display = 'none';
+        document.getElementById('share-screen').style.display = 'block';
+        generateShareText();
+    }
+
+    function goBackToResult() {
+        document.getElementById('share-screen').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+    }
+
+    function copyShareText() {
+        const copyBtn = document.getElementById('copy-btn');
+        const originalText = i18n[currentLang].ui.copyBtn;
+        const successText = i18n[currentLang].ui.copiedBtn;
+        
+        navigator.clipboard.writeText(shareTextContent)
+            .then(() => {
+                copyBtn.innerText = successText;
+                copyBtn.style.background = "#10b981"; 
+                copyBtn.style.borderColor = "#10b981";
+                setTimeout(() => {
+                    // 若這 2 秒內切換了語言，抓取最新的原文字
+                    copyBtn.innerText = i18n[currentLang].ui.copyBtn;
+                    copyBtn.style.background = "var(--primary-grad)"; 
+                    copyBtn.style.borderColor = "transparent";
+                }, 2000);
+            })
+            .catch(() => alert('Copy failed. Please manually select the text.'));
+    }
+</script>
+
+</body>
+</html>
